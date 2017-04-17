@@ -1,0 +1,136 @@
+package net.datastructures;
+import java.util.Comparator;
+import javax.swing.*;  //图形化软件的开发
+import java.awt.*;//抽象窗口工具包
+
+public class ExtendedAVLTree extends AVLTree
+{	
+//	public ExtendedAVLTree() { super(); } 
+//	public ExtendedAVLTree(Comparator<K> c)  // 带参数的
+//	{ super(c); }
+//--------1. clone part1 -------------me -----------------------------	
+	public static <K, V> AVLTree<K, V> clone(AVLTree<K, V> tree) 
+	{
+		AVLTree<K, V> newTree = new AVLTree<K, V>(); // 构建一个空的newTree
+		newTree.addRoot(tree.root().element());
+		//cloneSubTree(tree.root(), newTree.root(), tree, newTree); 
+		cloneSubTree(tree.root, newTree.root);
+		newTree.size = tree.size();
+		return newTree;
+	}
+	public static <K,V> void cloneSubTree(BTPosition<Entry<K,V>> root,
+			                              BTPosition<Entry<K,V>> newRoot) 
+	{
+		// 先创建好 newRoot的 extrenal 
+		AVLNode<K,V> leftNode = new AVLNode<K,V>();
+		AVLNode<K,V> rightNode = new AVLNode<K,V>();
+		newRoot.setLeft(leftNode);
+		leftNode.setParent(newRoot);
+		newRoot.setRight(rightNode);
+		rightNode.setParent(newRoot);
+		
+		if(root.getLeft().element() != null)
+		{
+			leftNode.setElement(root.getLeft().element());
+			cloneSubTree(root.getLeft(), leftNode);			
+		}
+		if(root.getRight().element() != null)
+		{
+			rightNode.setElement(root.getRight().element());
+			cloneSubTree(root.getRight(), rightNode);			
+		}		
+	}
+// --------------------Q1 done -----------------------			
+// --------------------Q2 me   -----------------------	
+	public static <K,V> AVLTree<K,V> merge(AVLTree<K,V> tree1, AVLTree<K,V> tree2)
+	{
+		AVLTree<K,V> tree3 = new AVLTree<K,V>();
+		//?? p or nodep??
+		NodePositionList<Position<Entry<K,V>>> List3 = new NodePositionList<Position<Entry<K,V>>>();
+		// Transferred tree1 and tree2 into 2 sorted lists
+		NodePositionList<Position<Entry<K,V>>> List1 = new NodePositionList<Position<Entry<K,V>>>();
+		NodePositionList<Position<Entry<K,V>>> List2 = new NodePositionList<Position<Entry<K,V>>>();
+		// Creat a list storing the nodes in the subtree of a node,ordered according to the 
+		// in-order traversal of the subtree(LinkedBinaryTree.java)
+		tree1.inorderPositions(tree1.root(),List1); //????也可以用preorderPosition吧？
+		tree2.inorderPositions(tree2.root(),List2);
+		// merage 2 lists
+		Comparator <K> compare = tree1.C;  //???? key
+        getInorderList(List1,List2,List3,compare); ///写一个methond得到list3
+		////////
+		tree3.root = mergeToTree(List3,0,List3.size()-1 ); // list, start,end
+        tree3.numEntries = tree1.numEntries + tree2.numEntries;
+		System.out.println(tree3.isBalanced(tree3.root()));
+		tree1 = null; //// ????
+		tree2 = null;
+		return tree3;
+	}
+	public static <K,V> void getInorderList(NodePositionList<Position<Entry<K,V>>> List1,
+			NodePositionList<Position<Entry<K,V>>> List2,
+			NodePositionList<Position<Entry<K,V>>> List3, 
+			Comparator <K> Comp)
+	{
+		int difference = 0;
+		while((List1.size()!= 0 && List2.size()!=0 ))
+		{
+//			difference = Comp.compare(List1.first().element().element().getKey(),
+//					List2.first().element().element().getKey());
+			difference = Comp.compare(List1.first().element().element().getKey(),
+					List2.first().element().element().getKey());
+			// 比较的是 
+			if (difference <= 0)
+			{
+				List3.addLast(List1.first().element());
+				List1.remove(List1.first());			
+			}
+			if (difference > 0)
+			{
+				List3.addLast(List2.first().element());
+				List2.remove(List2.first());
+			}
+		}
+		while (List1.size()!= 0) // 条件这样判断对吗？
+		{
+			if(List1.first().element() != null)
+			List3.addLast(List1.first().element());
+			List1.remove(List1.first());	
+		}
+		while (List2.size()!= 0)
+		{
+			List3.addLast(List2.first().element());
+			List2.remove(List2.first());
+		}
+	} // 可能null这个情况没写全
+	
+	
+	
+	public static<K,V> BTPosition<Entry<K,V>> mergeToTree (NodePositionList<Position<Entry<K,V>>> List3, 
+			int start, int end)
+	{
+		if (start > end) return null; // start 和 end重合的地方
+		int mid = start +  (start + end)/2;
+		BTPosition<Entry<K,V>> root = new AVLNode<K,V>(); //？？？？？
+		BTPosition<Entry<K,V>> leftChild = new AVLNode<K,V>();
+		BTPosition<Entry<K,V>> rightChild = new AVLNode<K,V>();
+		
+		leftChild = mergeToTree(List3,start, mid-1);
+		if (leftChild != null) leftChild.setParent(root);
+		root.setLeft(leftChild);
+		
+		root.setElement(List3.first().element().element());
+		List3.remove(List3.first());
+		
+		rightChild = mergeToTree(List3,mid+1,end);
+		if (rightChild != null) rightChild.setParent(root);
+		root.setRight(rightChild);		
+		return root;
+	}
+	
+	
+	
+	
+	
+	
+// --------------------Q2  -----------------------
+	
+}// end of class
